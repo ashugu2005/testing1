@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:iis="http://schemas.microsoft.com/wix/IIsExtension" >    
+	<Product Id="*" 
+              UpgradeCode="12345678-1234-1234-1234-111111111114" 
+              Version="1.0.0.0" 
+              Language="1033" 
+              Name="My Application Name" 
+              Manufacturer="My Manufacturer Name">
+                
+        <Package InstallerVersion="300" Compressed="yes"/>
+        <Media Id="1" Cabinet="myapplication.cab" EmbedCab="yes" />
+
+        <!-- Major Upgrade removes a previous version of an application and installs a new version. Below MajorUpgrade schedules RemoveExistingProducts after InstallValidate -->
+              
+		<MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." AllowDowngrades="no" />
+		
+        <!-- Define the directory structure -->
+        <Directory Id="TARGETDIR" Name="SourceDir">
+					<Directory Id="level1" Name="IIS">					
+							<Directory Id="level3" Name="V5">
+								<Directory Id="level2" Name="SVM.Shared.API.Products"> 
+							<!--Defines virtual web directory-->
+								<Component Id="DemoWebvirtual" Guid="11d4a787-3332-4eb8-ae86-e0f597145df2" KeyPath="yes">
+									<iis:WebVirtualDir Id='Web1' 
+										Alias='V5/SVM.Shared.API.Products' 
+										Directory='level2' 
+										WebSite='ExistingWebSite'>
+										<iis:WebApplication Id='SVM.Shared.API.Products' 
+											Name='SVM.Shared.API.Products' 
+											WebAppPool="DemoWebsiteAppPool"  />
+									</iis:WebVirtualDir>
+									<CreateFolder/>
+								</Component>			
+							</Directory>
+						</Directory>
+					</Directory>
+        </Directory>
+
+        
+        <!-- Tell WiX to install the files -->
+        <Feature Id="MainApplication" Title="Main Application" Level="1">
+            <ComponentGroupRef Id="MyComponentGroupId" />
+			<ComponentGroupRef Id="DemoWebsiteIssConfiguration" />
+        </Feature>
+		
+		<!-- Define properties common to IIS web sites and vroots-->
+		<iis:WebDirProperties Id="AnonymousExecuteAndScript" 
+                      Read="yes" 
+                      Write="no" 
+                      Execute="yes" 
+                      Script="yes" 
+                      AnonymousAccess="yes" 
+                      Index="no" 
+                      LogVisits="no"/>
+		 
+		<iis:WebSite Id="ExistingWebSite" Description="root" SiteId="*" >
+			<iis:WebAddress Id="AllUnassigned" Port="80" />     
+		</iis:WebSite>
+		
+    <DirectoryRef Id="level2">
+		<Component Id="DemoWebsiteAppPool" Guid="11d4a787-3332-4eb8-ae86-e0f597145cf2" KeyPath="yes">
+			<iis:WebAppPool Id="DemoWebsiteAppPool"
+							Name="Version5pool"
+							Identity="applicationPoolIdentity"
+							ManagedPipelineMode="Integrated" 
+							ManagedRuntimeVersion="v4.0" />		
+		</Component>	
+	</DirectoryRef>	 
+
+	<ComponentGroup Id="DemoWebsiteIssConfiguration">
+		<ComponentRef Id="DemoWebsiteAppPool" />				
+		<ComponentRef Id="DemoWebvirtual" />
+	</ComponentGroup>
+	
+	</Product>
+</Wix>
